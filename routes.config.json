@@ -1,0 +1,25 @@
+[
+  {
+    "id": "monte-adone",
+    "name": "Monte Adone",
+    "sub": "Anello da Badolo, 9,7 km",
+    "gpx": "routes/monte-adone.gpx",
+    "nellApp": true,
+    "tappe": [
+      { "name": "Badolo", "msg": "Partenza: sentiero 110" },
+      { "name": "Passo M. del Frate", "msg": "Crinale, poi scendi" },
+      { "name": "Centro Fauna", "msg": "Bivio 110A: a destra" },
+      { "name": "Campiuno", "msg": "A sinistra: su in cresta" },
+      { "name": "Monte Adone", "msg": "Vetta 655 m" },
+      { "name": "Bivio La Vallazza", "msg": "A sinistra sul 912" },
+      { "name": "Bivio 110A", "msg": "A destra sul 110" },
+      { "name": "Badolo", "msg": "Arrivo" }
+    ],
+    "tratti": [
+      { "name": "Sentiero 110", "fino": [44.34422, 11.30345] },
+      { "name": "Sentiero 912", "fino": [44.34565, 11.29640] },
+      { "name": "Sentiero 110A", "fino": [44.34621, 11.29534] },
+      { "name": "Sentiero 110" }
+    ]
+  }
+]

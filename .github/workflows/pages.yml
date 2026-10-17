@@ -1,0 +1,43 @@
+# A ogni push su main converte i percorsi (tools/build_site.js) e pubblica
+# index.json e i <id>.json con GitHub Pages, all'indirizzo da cui l'orologio li
+# scarica: https://pietroni1.github.io/trekking-percorsi/
+# Se la conversione dà errore il sito resta com'era.
+name: Pubblica i percorsi
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node tools/build_site.js --out _site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+          include-hidden-files: true
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
