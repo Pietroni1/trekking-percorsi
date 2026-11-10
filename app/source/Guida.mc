@@ -118,11 +118,13 @@ class Guida {
                 orient = _direzionePercorso();
             }
         } else if (!perso) {
-            if (buona && fuori > FUORI) { _nFuori++; } else { _nFuori = 0; }
-            if (buona && inMoto && fuori > 15.0 && _suUnRamo()) { _nRamo++; } else { _nRamo = 0; }
-            if (_nFuori >= 3 || _nRamo >= 3) {
+            // con il segnale scarso l'allarme arriva lo stesso, ma dopo il doppio delle conferme
+            var conferme = buona ? 3 : 6;
+            if (fuori > FUORI) { _nFuori++; } else { _nFuori = 0; }
+            if (inMoto && fuori > 15.0 && _suUnRamo()) { _nRamo++; } else { _nRamo = 0; }
+            if (_nFuori >= conferme || _nRamo >= conferme) {
                 perso = true;
-                ramo = _nRamo >= 3;
+                ramo = _nRamo >= conferme;
                 _conferma = -1;
                 _ultimoAllarme = ora;
                 Avvisi.perso();

@@ -50,7 +50,9 @@ Per togliere un percorso, togli la sua voce da `routes.config.json` (e il GPX): 
 
 ## Trekking 2, la nuova app
 
-La cartella `app/` contiene una nuova app per fēnix 7 (anche S, X e Pro), scritta da capo per non perdersi ai bivi. Si installa accanto a quella attuale, che resta com'è. **Non è ancora stata compilata né provata sull'orologio**: la logica della guida è stata provata solo con camminate simulate al computer.
+La cartella `app/` contiene una nuova app per fēnix 7 (anche S, X e Pro), scritta da capo per non perdersi ai bivi. Si installa accanto a quella attuale, che resta com'è.
+
+**A che punto è:** compila ed è stata provata nel simulatore di Garmin con lo schermo del fēnix 7: scarico dei percorsi dal sito, guida ai bivi, allarme sul ramo sbagliato, pagine dei dati, menu, pausa e salvataggio dell'attività (che risulta di tipo Escursionismo). **Non è ancora stata provata su un orologio vero.** Lo scarico delle mappe dal telefono nel simulatore non si può provare: è stato provato solo il disegno, con mappe messe a mano.
 
 Cosa fa:
 
@@ -60,13 +62,19 @@ Cosa fa:
 - **Registrazione:** START avvia un'attività di Escursionismo, con traccia GPS, battito, quota e dislivello, passi, temperatura e calorie; poi la trovi in Garmin Connect. START di nuovo mette in pausa e offre Riprendi, Salva o Scarta.
 - **Tasti:** SU e GIÙ cambiano pagina (mappa, dati, profilo altimetrico); BACK passa dalla mappa vicina a tutto il percorso. Lo schermo tattile non fa nulla, per non mettere in pausa per sbaglio.
 
-Per compilarla serve il Connect IQ SDK di Garmin, con una chiave da sviluppatore:
+Per installarla:
+
+1. Collega l'orologio al computer col cavo: compare come un disco di nome GARMIN.
+2. Da `app/dist/` prendi il file del tuo modello: `trekking2-fenix7.prg` (fēnix 7), `-fenix7s` (7S), `-fenix7x` (7X), `-fenix7pro`, `-fenix7spro`, `-fenix7xpro` (i Pro).
+3. Copialo nella cartella `GARMIN/APPS` dell'orologio, poi scollega l'orologio.
+4. Apri Trekking 2 dall'elenco delle attività e app, e con il telefono vicino scegli **Aggiorna percorsi**.
+5. Apri un percorso, tieni premuto SU e scegli **Scarica mappe**: va fatto a casa, per ogni percorso e per ogni tipo di sfondo che vuoi usare.
+
+Per ricompilarla dopo una modifica serve il Connect IQ SDK di Garmin, con una chiave da sviluppatore:
 
 ```
-monkeyc -f app/monkey.jungle -d fenix7 -o app/bin/trekking2.prg -y <chiave.der>
+monkeyc -f app/monkey.jungle -d fenix7 -o app/dist/trekking2-fenix7.prg -y <chiave.der> -r
 ```
-
-Il file `trekking2.prg` va copiato nella cartella `GARMIN/APPS` dell'orologio collegato al computer. Al primo avvio scegli **Aggiorna percorsi**.
 
 ## Dal telefono
 
