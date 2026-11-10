@@ -186,7 +186,7 @@ class NavView extends WatchUi.View {
         if (!tutto) { _disegnaRami(dc, raggio + 60.0); }
         _disegnaPercorso(dc, raggio + 120.0);
         _disegnaTappe(dc, raggio);
-        if (!tutto && g.bivioInVista() && !g.perso && g.agganciato) { _disegnaUscita(dc); }
+        if (!tutto && g.bivioInVista() && !g.perso && !g.contromano && g.agganciato) { _disegnaUscita(dc); }
 
         if (g.haFix) {
             if (g.perso || !g.agganciato) {
@@ -480,9 +480,14 @@ class NavView extends WatchUi.View {
             verso = _versoPercorso();
         } else if (g.perso) {
             fondo = ROSSO;
-            riga1 = g.ramo ? "RAMO SBAGLIATO" : "FUORI PERCORSO";
-            riga2 = "torna: " + _metri(g.fuori);
+            // in alto lo schermo è stretto: lì va la riga corta
+            riga1 = "torna " + _metri(g.fuori);
+            riga2 = g.ramo ? "RAMO SBAGLIATO" : "FUORI PERCORSO";
             verso = _versoPercorso();
+        } else if (g.contromano) {
+            fondo = ROSSO;
+            riga1 = "CONTROMANO";
+            riga2 = "stai tornando indietro";
         } else if (g.msgTappa != null && ora < g.msgFino) {
             fondo = 0x0055AA;
             riga1 = g.msgTappa as String;
@@ -516,7 +521,7 @@ class NavView extends WatchUi.View {
         var y1 = 13;
         var f1 = Graphics.FONT_TINY;
         var f2 = Graphics.FONT_XTINY;
-        if (dc.getTextWidthInPixels(riga1, f1) + (conFreccia ? 28 : 0) > _corda(y1 + 6)) { f1 = f2; }
+        if (dc.getTextWidthInPixels(riga1, f1) + (conFreccia ? 34 : 0) > _corda(y1 + 6)) { f1 = f2; }
         var h1 = dc.getFontHeight(f1);
         var h2 = dc.getFontHeight(f2);
         var y2 = y1 + h1 - 2;
@@ -529,13 +534,13 @@ class NavView extends WatchUi.View {
         dc.fillRectangle(0, 0, _w, alta);
         // la prima riga, con la freccia a sinistra del testo
         var l1 = dc.getTextWidthInPixels(riga1, f1);
-        var x = (_w - l1) / 2 + (conFreccia ? 14 : 0);
+        var x = (_w - l1) / 2 + (conFreccia ? 17 : 0);
         dc.setColor(testo, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y1, f1, riga1, Graphics.TEXT_JUSTIFY_LEFT);
         if (svolta != null) {
-            _freccia(dc, x - 18, y1 + h1 / 2 + 1, 9, svolta, testo);
+            _freccia(dc, x - 20, y1 + h1 / 2 + 2, 11, svolta, testo);
         } else if (verso != null) {
-            _punta(dc, (x - 18).toFloat(), (y1 + h1 / 2).toFloat(), verso, 9, testo);
+            _punta(dc, (x - 20).toFloat(), (y1 + h1 / 2).toFloat(), verso, 10, testo);
         }
         dc.setColor(testo, Graphics.COLOR_TRANSPARENT);
         for (var i = 0; i < righe.size(); i++) {

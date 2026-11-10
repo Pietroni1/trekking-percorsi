@@ -34,6 +34,7 @@ class Guida {
     var agganciato as Boolean = false;  // siamo stati sul percorso almeno una volta
     var perso as Boolean = false;       // fuori percorso
     var ramo as Boolean = false;        // fuori percorso su un ramo sbagliato di un bivio
+    var contromano as Boolean = false;  // sul percorso, ma camminando nel verso opposto
     var orient as Float = 0.0;      // direzione del percorso qui, per orientare la mappa
 
     // bivi
@@ -58,6 +59,8 @@ class Guida {
     private var _ds as Float = 0.0;         // seno e coseno della direzione di marcia
     private var _dc as Float = 1.0;
     private var _fermoVerso as Number = 0;  // secondi in cui non si cambia passaggio per il verso
+    private var _nRetro as Number = 0;
+    private var _saltato as Boolean = false;    // siamo rientrati sul percorso in un altro punto
     private var _nFuori as Number = 0;
     private var _nRamo as Number = 0;
     private var _nContro as Number = 0;
@@ -95,7 +98,19 @@ class Guida {
         _ds = Math.sin(dir).toFloat();
         _dc = Math.cos(dir).toFloat();
 
+        var prima = lungo;
         _aggancia(inMoto);
+        // un salto lungo il percorso: abbiamo tagliato, o siamo finiti su un altro tratto
+        var salto = lungo - prima;
+        var saltoOra = false;
+        if (agganciato && fuori <= FUORI && (salto > 300.0 || salto < -300.0)) {
+            msgTappa = salto > 0.0 ? "Saltati " + _km(salto) : "Indietro di " + _km(-salto);
+            msgTappa2 = "controlla dove sei";
+            msgFino = ora + 10000;
+            _saltato = true;
+            saltoOra = true;
+            Avvisi.tappa();
+        }
 
         if (!agganciato) {
             if (fuori <= 20.0) {
@@ -117,14 +132,30 @@ class Guida {
             ramo = false;
             _nFuori = 0;
             _nRamo = 0;
-            giustoFino = ora + 4000;
-            Avvisi.giusto();
+            if (!_saltato) {
+                giustoFino = ora + 4000;
+                Avvisi.giusto();
+            }
+            _saltato = false;
         } else if (ora - _ultimoAllarme > 25000) {
             _ultimoAllarme = ora;
             Avvisi.perso();
         }
 
         if (!agganciato) { return; }
+
+        // contromano: sul percorso, ma da venti secondi in cammino nel verso opposto
+        if (inMoto) {
+            if (!perso && _contrario(seg)) { _nRetro++; } else { _nRetro = 0; }
+        }
+        if (_nRetro >= 20) {
+            if (!contromano) {
+                contromano = true;
+                Avvisi.perso();
+            }
+        } else {
+            contromano = false;
+        }
 
         // la mappa gira piano verso la direzione del percorso
         if (!perso) {
@@ -136,7 +167,8 @@ class Guida {
         }
 
         _aggiornaBivi();
-        if (perso) { return; }
+        if (saltoOra) { _conferma = -1; }
+        if (perso || contromano || saltoOra) { return; }
 
         if (ka >= 0) {
             var liv = (p.bivi[ka] as Array)[1] as Number;
@@ -179,6 +211,12 @@ class Guida {
     // true se il prossimo bivio da segnalare è abbastanza vicino da mostrarlo.
     function bivioInVista() as Boolean {
         return ka >= 0 && distBivio <= VISTA;
+    }
+
+    // Una distanza in chilometri: "3,7 km".
+    private function _km(m as Float) as String {
+        var etti = Math.round(m / 100.0).toNumber();
+        return (etti / 10).format("%d") + "," + (etti % 10).format("%d") + " km";
     }
 
     // Metri che mancano alla fine.
