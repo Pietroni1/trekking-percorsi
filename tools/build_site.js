@@ -8,6 +8,8 @@
 //                impronta (h) di ogni percorso
 //   <id>.json    un file per percorso, nello stesso formato degli elementi di
 //                resources/jsonData/routes.json dell'app
+//   v2/          lo stesso elenco e gli stessi percorsi nel formato della nuova
+//                app (cartella app/), con i bivi: vedi tools/route_v2.js
 // L'orologio scarica solo i percorsi nuovi o cambiati (impronta diversa), uno
 // alla volta, così la memoria basta anche con molti percorsi.
 //
@@ -17,6 +19,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { buildRoutes, readConfig, ROOT } = require("./gpx_to_route");
+const { buildRoutesV2 } = require("./route_v2");
 
 // Oltre questi punti un percorso rischia di superare i 32 KB che Application.Storage
 // accetta per ogni valore: sull'orologio un percorso occupa circa 19 byte a punto
@@ -46,10 +49,27 @@ function buildSite(outDir, config = readConfig()) {
     index.push({ id: r.id, name: r.name, sub: r.sub, file, h: crypto.createHash("sha1").update(json).digest("hex").slice(0, 8) });
   }
   fs.writeFileSync(path.join(outDir, "index.json"), JSON.stringify({ routes: index }));
+  scriviV2(path.join(outDir, "v2"), config);
   fs.writeFileSync(path.join(outDir, ".nojekyll"), "");
   const rel = path.relative(process.cwd(), outDir);
   console.log(`scritti index.json e ${routes.length} percorsi in ${rel && !rel.startsWith("..") ? rel : outDir}`);
   return index;
+}
+
+// La cartella v2: gli stessi percorsi con i bivi e le tessere di mappa, per la nuova app.
+function scriviV2(dir, config) {
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  const index = [];
+  for (const r of buildRoutesV2(config)) {
+    const n = r.xy.length / 2;
+    if (n > MAX_POINTS) console.warn(`  attenzione: ${r.id} (v2) ha ${n} punti, troppi per l'orologio: alza "tolerance" in routes.config.json`);
+    const json = JSON.stringify(r);
+    const file = `${r.id}.json`;
+    fs.writeFileSync(path.join(dir, file), json);
+    index.push({ id: r.id, name: r.name, sub: r.sub, file, h: crypto.createHash("sha1").update(json).digest("hex").slice(0, 8) });
+  }
+  fs.writeFileSync(path.join(dir, "index.json"), JSON.stringify({ routes: index }));
 }
 
 module.exports = { buildSite };

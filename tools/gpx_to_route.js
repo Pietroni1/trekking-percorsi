@@ -129,4 +129,4 @@ function buildRoutes(config = readConfig()) {
   return out;
 }
 
-module.exports = { buildRoutes, readConfig, ROOT };
+module.exports = { buildRoutes, parseGpx, simplify, readConfig, ROOT };
