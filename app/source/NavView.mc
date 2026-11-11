@@ -29,6 +29,10 @@ class NavView extends WatchUi.View {
 
     var pagina as Number = MAPPA;
     var tutto as Boolean = false;   // la mappa mostra tutto il percorso, col nord in alto
+    var prova as Boolean = false;   // prova a casa: la posizione cammina da sola lungo il percorso
+
+    const PASSO_PROVA = 5.0;        // metri al secondo della prova a casa
+    const LONTANO = 500.0;          // oltre questi metri dal percorso si mostra tutto il percorso
 
     private var _g as Guida;
     private var _t as Tessere;
@@ -60,6 +64,11 @@ class NavView extends WatchUi.View {
     private var _maxY as Number = 0;
     private var _minEle as Number = 0;
     private var _maxEle as Number = 0;
+
+    private var _provaM as Float = 0.0;     // metri fatti nella prova a casa
+    private var _intero as Boolean = false; // in questo disegno si vede tutto il percorso
+    private var _tessereViste as Number = 0;    // tessere disegnate in questo disegno
+    private var _conSfondo as Boolean = false;  // in questo disegno lo sfondo era richiesto
 
     function initialize(guida as Guida, tessere as Tessere) {
         View.initialize();
@@ -100,7 +109,14 @@ class NavView extends WatchUi.View {
         Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
     }
 
+    // Avvia o ferma la prova a casa: riparte da dove eravamo sul percorso, o dall'inizio.
+    function impostaProva(attiva as Boolean) as Void {
+        prova = attiva;
+        _provaM = (attiva && _g.agganciato) ? _g.lungo : 0.0;
+    }
+
     function onPosizione(info as Position.Info) as Void {
+        if (prova) { return; }
         var loc = info.position;
         if (loc == null || info.accuracy == Position.QUALITY_NOT_AVAILABLE || info.accuracy == Position.QUALITY_LAST_KNOWN) {
             return;
@@ -124,6 +140,18 @@ class NavView extends WatchUi.View {
     }
 
     function onSecondo() as Void {
+        if (prova) {
+            var g = _g;
+            _provaM += PASSO_PROVA;
+            if (_provaM >= g.p.lung) {
+                _provaM = g.p.lung;
+                prova = false;
+            }
+            var qui = g.punto(_provaM);
+            var avanti = g.punto(_provaM + 6.0);
+            var verso = (avanti[0] == qui[0] && avanti[1] == qui[1]) ? null : Math.atan2(avanti[0] - qui[0], avanti[1] - qui[1]).toFloat();
+            g.onLocale(qui[0], qui[1], verso, PASSO_PROVA, true);
+        }
         WatchUi.requestUpdate();
     }
 
@@ -148,7 +176,12 @@ class NavView extends WatchUi.View {
         var p = g.p;
         var m = p.map;
         var base = m != null ? (m["mx"] as Numeric).toFloat() : 1.7;   // a questa scala le tessere sono 1:1
-        if (tutto) {
+        // lontani dal percorso (per esempio a casa) la mappa intorno a noi non serve:
+        // si mostra tutto il percorso
+        _intero = tutto || (g.haFix && !g.agganciato && g.fuori > LONTANO);
+        _tessereViste = 0;
+        _conSfondo = false;
+        if (_intero) {
             var lw = (_maxX - _minX).toFloat();
             var lh = (_maxY - _minY).toFloat();
             _scala = (lw > lh ? lw : lh) / (_w * 0.72);
@@ -180,13 +213,15 @@ class NavView extends WatchUi.View {
         _my = _oy - a * _sin + b * _cos;
         var raggio = (_w / 2.0) * _scala;
 
-        if (!tutto && m != null && Imp.mappa != Imp.MAPPA_NESSUNA) {
+        // lo sfondo solo da vicino: a scala piccola servirebbero troppe tessere
+        if (!_intero && m != null && Imp.mappa != Imp.MAPPA_NESSUNA && _scala <= base * 1.2) {
+            _conSfondo = true;
             _disegnaTessere(dc, m, raggio - 6 * _scala);
         }
-        if (!tutto) { _disegnaRami(dc, raggio + 60.0); }
+        if (!_intero) { _disegnaRami(dc, raggio + 60.0); }
         _disegnaPercorso(dc, raggio + 120.0);
         _disegnaTappe(dc, raggio);
-        if (!tutto && g.bivioInVista() && !g.perso && !g.contromano && g.agganciato) { _disegnaUscita(dc); }
+        if (!_intero && g.bivioInVista() && !g.perso && !g.contromano && g.agganciato) { _disegnaUscita(dc); }
 
         if (g.haFix) {
             if (g.perso || !g.agganciato) {
@@ -245,9 +280,11 @@ class NavView extends WatchUi.View {
                 if ((qx - _mx) * (qx - _mx) + (qy - _my) * (qy - _my) > r2) { continue; }
                 var bmp = _t.prendi(Imp.mappa, zoom, x0 + col, y0 + riga);
                 if (bmp == null) { continue; }
+                _tessereViste++;
                 _schermo(sinistra, su);
-                var ax = mpx / _scala;
-                var ay = (su - giu) / 256.0 / _scala;
+                // la tessera può arrivare più piccola di 256 pixel: la scala segue i suoi pixel veri
+                var ax = lato / bmp.getWidth() / _scala;
+                var ay = (su - giu) / bmp.getHeight() / _scala;
                 if (_ang == 0.0 && ax > 0.98 && ax < 1.02) {
                     dc.drawBitmap(Math.round(_sx), Math.round(_sy), bmp);
                 } else {
@@ -288,7 +325,7 @@ class NavView extends WatchUi.View {
                 var y = xy[2 * i + 1];
                 var dx = x - _mx;
                 var dy = y - _my;
-                var dentro = tutto || dx * dx + dy * dy < r2;
+                var dentro = _intero || dx * dx + dy * dy < r2;
                 if (dentro || prima) {
                     if (i > 0) {
                         if (!haA) {
@@ -366,7 +403,7 @@ class NavView extends WatchUi.View {
             var y = p.xy[2 * i + 1];
             var dx = x - _mx;
             var dy = y - _my;
-            if (!tutto && dx * dx + dy * dy > r2) { continue; }
+            if (!_intero && dx * dx + dy * dy > r2) { continue; }
             _schermo(x, y);
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
             dc.fillCircle(_sx, _sy, 6);
@@ -563,7 +600,22 @@ class NavView extends WatchUi.View {
     private function _piede(dc as Graphics.Dc) as Void {
         var g = _g;
         var testo;
-        if (Registra.stato == Registra.FERMA) {
+        if (_conSfondo && _tessereViste == 0) {
+            // lo sfondo è acceso ma qui non c'è: si dice perché
+            var e = _t.errore;
+            if (!System.getDeviceSettings().phoneConnected) {
+                testo = "mappa: manca il telefono";
+            } else if (e != 0) {
+                testo = "mappa: errore " + e.format("%d");
+            } else {
+                testo = "mappa in arrivo...";
+            }
+        } else if (prova) {
+            testo = "PROVA  -" + _metri(g.restano());
+        } else if (_intero && !tutto) {
+            // lontani dal percorso: si può vedere l'app al lavoro anche da qui
+            testo = "tieni SU: prova a casa";
+        } else if (Registra.stato == Registra.FERMA) {
             testo = "START per partire";
         } else {
             var info = Activity.getActivityInfo();

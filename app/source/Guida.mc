@@ -88,10 +88,15 @@ class Guida {
     // Una nuova posizione GPS. lat e lon in gradi, direzione in radianti da nord
     // (null se non si sa), velocità in m/s, buona: false se il segnale è scarso.
     function onFix(lat as Double, lon as Double, direzione as Float?, vel as Float?, buona as Boolean) as Void {
+        onLocale(p.xDi(lon), p.yDi(lat), direzione, vel, buona);
+    }
+
+    // Come onFix, ma con la posizione già in metri a est e a nord dell'inizio.
+    function onLocale(x as Float, y as Float, direzione as Float?, vel as Float?, buona as Boolean) as Void {
         var ora = System.getTimer();
         haFix = true;
-        px = p.xDi(lon);
-        py = p.yDi(lat);
+        px = x;
+        py = y;
         var inMoto = vel != null && vel > 0.5;
         if (direzione != null && (inMoto || !agganciato)) { dir = direzione; }
         _inMoto = inMoto;
@@ -299,6 +304,7 @@ class Guida {
         var bestL = 0.0;            // quanto dista, lungo il percorso, da dove eravamo
         var bj = da;
         var bt = 0.0;
+        var trovato = false;        // il primo tratto guardato vale sempre, per quanto lontano
         for (var j = da; j <= a; j++) {
             var ax = xy[2 * j];
             var ay = xy[2 * j + 1];
@@ -319,7 +325,8 @@ class Guida {
             if (contro) { e = e * 4; }
             var l = p.cum[j] + t * (p.cum[j + 1] - p.cum[j]) - lungo;
             if (l < 0.0) { l = -l; }
-            if (e < bestE * 0.75 || (e < bestE * 1.33 && l < bestL)) {
+            if (!trovato || e < bestE * 0.75 || (e < bestE * 1.33 && l < bestL)) {
+                trovato = true;
                 best = d2; bestE = e; bestL = l; bj = j; bt = t;
             }
         }
@@ -370,6 +377,12 @@ class Guida {
         var ay = _qy;
         _puntoA(m + 30.0);
         return Math.atan2(_qx - ax, _qy - ay).toFloat();
+    }
+
+    // Il punto del percorso a s metri dall'inizio: [x, y].
+    function punto(s as Float) as Array<Float> {
+        _puntoA(s);
+        return [_qx, _qy];
     }
 
     // Il punto del percorso metri dopo il bivio k: [x, y].

@@ -22,6 +22,9 @@ class Tessere {
     const EXTRA = 30;           // tessere scaricate al volo da conservare
     const RIPROVA = 60;         // secondi prima di richiedere una tessera non arrivata
 
+    // l'ultimo errore di una richiesta al telefono (0 se l'ultima è riuscita)
+    var errore as Number = 0;
+
     // per la schermata d'attesa dello scarico in blocco
     var titolo as String = "";
     var stato as String = "";
@@ -43,8 +46,13 @@ class Tessere {
     private var _fatte as Number = 0;
     private var _prove as Number = 0;
     private var _segno as String = "";
+    // lato in pixel delle tessere da chiedere: 256, oppure 128 se l'orologio non
+    // riesce a conservare quelle grandi
+    private var _lato as Number = 256;
 
     function initialize() {
+        var v = Application.Storage.getValue("tl");
+        if (v instanceof Number) { _lato = v; }
     }
 
     function chiave(fonte as Number, col as Number, riga as Number) as String {
@@ -108,7 +116,7 @@ class Tessere {
         var n = totale(p);
         var fatte = scaricate(p, Imp.mappa);
         if (fatte >= n) { return Imp.nomeMappa() + ": già scaricata"; }
-        return Imp.nomeMappa() + ": " + fatte.format("%d") + " di " + n.format("%d");
+        return Imp.nomeMappa() + ": " + fatte.format("%d") + " di " + n.format("%d") + (errore != 0 ? ", errore " + errore.format("%d") : "");
     }
 
     // Scarica in blocco le tessere del percorso che mancano.
@@ -195,13 +203,14 @@ class Tessere {
         }
         _chiave = k;
         _inBlocco = inBlocco;
-        Communications.makeImageRequest(url, null, { :maxWidth => 256, :maxHeight => 256, :dithering => retino }, method(:onTessera));
+        Communications.makeImageRequest(url, null, { :maxWidth => _lato, :maxHeight => _lato, :dithering => retino }, method(:onTessera));
     }
 
     function onTessera(codice as Number, dati as WatchUi.BitmapResource or Graphics.BitmapReference or Null) as Void {
         var k = _chiave;
         _chiave = null;
         if (k == null) { return; }
+        errore = (codice == 200 && dati != null) ? 0 : codice;
         if (!_inBlocco) {
             if (codice == 200 && dati != null) {
                 _manca.remove(k);
@@ -216,6 +225,11 @@ class Tessere {
             try {
                 Application.Storage.setValue(k, dati);
             } catch (e) {
+                if (_rimpicciolisci()) {
+                    // l'orologio non conserva una tessera così grande: si riprova più piccola
+                    _prossima();
+                    return;
+                }
                 stato = "Memoria piena:\nelimina le mappe\ndi un altro percorso";
                 finito = true;
                 WatchUi.requestUpdate();
@@ -232,6 +246,7 @@ class Tessere {
             _prossima();
         } else {
             stato = (codice == Communications.BLE_CONNECTION_UNAVAILABLE ? "Telefono non\ncollegato" : "Errore " + codice.format("%d")) + "\nfatte " + _fatte.format("%d") + " di " + (_coda.size() / 2).format("%d");
+            if (codice != Communications.BLE_CONNECTION_UNAVAILABLE && _rimpicciolisci()) { stato += "\nriprova: più piccole"; }
             finito = true;
             WatchUi.requestUpdate();
         }
@@ -267,8 +282,18 @@ class Tessere {
             extra.add(k);
             Application.Storage.setValue("tx", extra);
         } catch (e) {
-            // memoria piena: la tessera resta solo per questa camminata
+            // non si è potuta conservare: la tessera resta solo per questa camminata
+            _rimpicciolisci();
         }
+    }
+
+    // Passa alle tessere da 128 pixel, meno nitide ma quattro volte più leggere.
+    // false se erano già piccole.
+    private function _rimpicciolisci() as Boolean {
+        if (_lato <= 128) { return false; }
+        _lato = 128;
+        Application.Storage.setValue("tl", _lato);
+        return true;
     }
 
     // Una tessera scaricata in blocco non va più cancellata con quelle al volo.

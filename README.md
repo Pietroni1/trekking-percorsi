@@ -58,7 +58,8 @@ Cosa fa:
 
 - **Bivi:** a 60 m da un bivio decisivo vibra due volte, ingrandisce la mappa e mostra in alto freccia, distanza e indicazione; al bivio vibra tre volte; 20 m dopo conferma "Direzione giusta". I rami da non prendere sono disegnati in rosso con una croce. Ai bivi dove si prosegue dà un solo colpo.
 - **Allarmi:** "Ramo sbagliato" dopo una ventina di metri sul ramo sbagliato di un bivio, "Fuori percorso" oltre 30 m dal tracciato, "Contromano" se cammini sul percorso nel verso opposto, e un avviso se salti un pezzo di percorso. Ogni allarme mostra la freccia e i metri per tornare.
-- **Mappa:** sfondo satellitare, topografico o solo percorso; il percorso davanti a te va verso l'alto, oppure il nord. Le mappe si scaricano dal telefono con **Scarica mappe** (menu, tenendo premuto SU) e restano sull'orologio; quelle che mancano arrivano durante la camminata, se il telefono è collegato.
+- **Prova a casa:** lontano dal percorso l'app mostra tutto il percorso e quanto dista. Dal menu (SU tenuto premuto) **Prova a casa** fa camminare la posizione da sola lungo il percorso, con bivi, avvisi e mappe come in una camminata vera; la stessa voce la ferma.
+- **Mappa:** sfondo satellitare, topografico o solo percorso; il percorso davanti a te va verso l'alto, oppure il nord. Le mappe si scaricano dal telefono con **Scarica mappe** (menu, tenendo premuto SU) e restano sull'orologio; quelle che mancano arrivano durante la camminata, se il telefono è collegato. Se lo sfondo è acceso ma non si vede, la riga in basso dice perché: "manca il telefono", "mappa in arrivo..." oppure "errore" con un numero.
 - **Registrazione:** START avvia un'attività di Escursionismo, con traccia GPS, battito, quota e dislivello, passi, temperatura e calorie; poi la trovi in Garmin Connect. START di nuovo mette in pausa e offre Riprendi, Salva o Scarta.
 - **Tasti:** SU e GIÙ cambiano pagina (mappa, dati, profilo altimetrico); BACK passa dalla mappa vicina a tutto il percorso. Lo schermo tattile non fa nulla, per non mettere in pausa per sbaglio.
 
@@ -69,6 +70,7 @@ Per installarla:
 3. Copialo nella cartella `GARMIN/APPS` dell'orologio, poi scollega l'orologio.
 4. Apri Trekking 2 dall'elenco delle attività e app, e con il telefono vicino scegli **Aggiorna percorsi**.
 5. Apri un percorso, tieni premuto SU e scegli **Scarica mappe**: va fatto a casa, per ogni percorso e per ogni tipo di sfondo che vuoi usare.
+6. Sempre dal menu, **Prova a casa** fa vedere come lavora l'app senza andare sul posto.
 
 Per ricompilarla dopo una modifica serve il Connect IQ SDK di Garmin, con una chiave da sviluppatore:
 

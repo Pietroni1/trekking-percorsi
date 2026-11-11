@@ -74,6 +74,7 @@ class NavDelegate extends WatchUi.BehaviorDelegate {
     function onMenu() as Boolean {
         var p = _guida.p;
         var menu = new WatchUi.Menu2({ :title => "Mappa" });
+        menu.addItem(new WatchUi.MenuItem("Prova a casa", _vista.prova ? "In corso: premi per fermare" : "Cammina da sola sul percorso", :prova, null));
         menu.addItem(new WatchUi.MenuItem("Sfondo", Imp.nomeMappa(), :sfondo, null));
         menu.addItem(new WatchUi.MenuItem("Vista", _vista.tutto ? "Tutto il percorso" : "Vicina", :vista, null));
         menu.addItem(new WatchUi.MenuItem("In alto", Imp.nord ? "Il nord" : "Il percorso", :alto, null));
@@ -163,7 +164,12 @@ class MappaDelegate extends WatchUi.Menu2InputDelegate {
 
     function onSelect(voce as WatchUi.MenuItem) as Void {
         var id = voce.getId();
-        if (id == :sfondo) {
+        if (id == :prova) {
+            _vista.impostaProva(!_vista.prova);
+            _vista.tutto = false;
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            return;
+        } else if (id == :sfondo) {
             Imp.mappa = (Imp.mappa + 1) % 3;
             voce.setSubLabel(Imp.nomeMappa());
         } else if (id == :vista) {
